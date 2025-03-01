@@ -17,7 +17,7 @@ globalThis.onClickBtn = async () => {
     pc.addTrack(track);
   }
   const video = document.createElement("video");
-
+  const remoteId = document.getElementById("remoteId").value;
   // ブラウザのポリシーによる映像再生エラーの回避
   video.playsInline = true;
   video.muted = true;
@@ -27,14 +27,8 @@ globalThis.onClickBtn = async () => {
   video.srcObject = stream;
   video.play();
   document.body.appendChild(video);
-
-  // LocalDescriptionを生成
-  pc.createOffer().then((desc) => {
-    // LocalDescriptionをPeerConnectionにセット
-    pc.setLocalDescription(desc);
-    // LocalDescriptionをリモートユーザーへ送信
-    socket.emit("offer", desc);
-  });
+  socket.emit("join", remoteId);
+  //LocalDescriptionを生成;
 };
 
 // リモートユーザーがPeerConnectionにMediaStreamTrackを追加したら発火
@@ -79,4 +73,16 @@ socket
   // リモートユーザーのanswerイベントを受信し、RemoteDescriptionをPeerConnectionにセット
   .on("answer", (desc) => pc.setRemoteDescription(desc))
   // リモートユーザーのiceイベントを受信し、ICE Candidateを追加
-  .on("ice", (candidate) => pc.addIceCandidate(candidate));
+  .on("ice", (candidate) => pc.addIceCandidate(candidate))
+  .on("ready", () => {
+    alert("接続が完了しました");
+    pc.createOffer().then((desc) => {
+      // LocalDescriptionをPeerConnectionにセット
+      pc.setLocalDescription(desc);
+      // LocalDescriptionをリモートユーザーへ送信
+      socket.emit("offer", desc);
+    });
+  })
+  .on("please_wait", () => {
+    alert("お待ちください");
+  });
